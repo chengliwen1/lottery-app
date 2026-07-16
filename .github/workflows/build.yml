@@ -28,10 +28,20 @@ jobs:
       run: |
         pip install buildozer cython
     
-    - name: Accept Android SDK licenses
+    - name: Pre-install Android SDK components
       run: |
-        yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
-        yes | ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --licenses || true
+        # 下载并设置 SDK
+        mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools
+        cd ~/.buildozer/android/platform/android-sdk/cmdline-tools
+        wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+        unzip -q commandlinetools-linux-9477386_latest.zip
+        mv cmdline-tools latest
+        
+        # 接受所有 license
+        yes | latest/bin/sdkmanager --licenses
+        
+        # 安装必需的组件
+        latest/bin/sdkmanager "platform-tools" "build-tools;33.0.0" "platforms;android-33"
     
     - name: Build APK
       run: |
