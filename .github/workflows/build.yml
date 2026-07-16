@@ -12,54 +12,13 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
-    
-    - name: Install Java 21
+    - name: Build APK with Docker
       run: |
-        sudo apt update
-        sudo apt install -y wget
-        # 下载 Eclipse Temurin Java 21
-        wget -q https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jdk_x64_linux_hotspot_21.0.4_7.tar.gz -O /tmp/jdk21.tar.gz
-        sudo mkdir -p /usr/lib/jvm
-        sudo tar -xzf /tmp/jdk21.tar.gz -C /usr/lib/jvm/
-        sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/jdk-21.0.4+7/bin/java 1
-        sudo update-alternatives --install /usr/bin/javac javac /usr/lib/jvm/jdk-21.0.4+7/bin/javac 1
-        java -version
-    
-    - name: Install system dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y git zip unzip python3-pip autoconf \
-            libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev \
-            libtinfo5 cmake libffi-dev libssl-dev automake
-    
-    - name: Install buildozer
-      run: |
-        pip install buildozer cython
-    
-    - name: Pre-install Android SDK
-      run: |
-        mkdir -p /tmp/android-sdk/cmdline-tools
-        cd /tmp/android-sdk/cmdline-tools
-        wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-        unzip -q commandlinetools-linux-11076708_latest.zip
-        mv cmdline-tools latest
-        
-        yes | latest/bin/sdkmanager --sdk_root=/tmp/android-sdk --licenses
-        latest/bin/sdkmanager --sdk_root=/tmp/android-sdk "platform-tools" "build-tools;33.0.0" "platforms;android-33"
-        
-        mkdir -p ~/.buildozer/android/platform/android-sdk
-        cp -r /tmp/android-sdk/* ~/.buildozer/android/platform/android-sdk/
-        cd ~/.buildozer/android/platform/android-sdk
-        mkdir -p tools
-        ln -s ../cmdline-tools/latest/bin tools/bin
-    
-    - name: Build APK
-      run: |
-        buildozer android debug
+        docker run --rm \
+          -v $(pwd):/home/user/host \
+          -w /home/user/host \
+          kivy/buildozer:latest \
+          buildozer android debug
       timeout-minutes: 120
     
     - name: Upload APK
