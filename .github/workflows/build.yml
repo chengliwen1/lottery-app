@@ -24,26 +24,33 @@ jobs:
             libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev \
             libtinfo5 cmake libffi-dev libssl-dev automake
     
-    - name: Pre-install Android SDK
-      run: |
-        mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools
-        cd ~/.buildozer/android/platform/android-sdk/cmdline-tools
-        wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-        unzip -q commandlinetools-linux-9477386_latest.zip
-        mv cmdline-tools latest
-        
-        # 创建 tools 软链接（buildozer 期望的路径）
-        cd ~/.buildozer/android/platform/android-sdk
-        mkdir -p tools
-        ln -s ../cmdline-tools/latest/bin tools/bin
-        
-        # 接受 license 并安装组件
-        yes | tools/bin/sdkmanager --licenses
-        tools/bin/sdkmanager "platform-tools" "build-tools;33.0.0" "platforms;android-33"
-    
     - name: Install buildozer
       run: |
         pip install buildozer cython
+    
+    - name: Pre-install Android SDK with Java 17 compatible tools
+      run: |
+        # 下载新版 cmdline-tools (支持 Java 17)
+        mkdir -p /tmp/android-sdk/cmdline-tools
+        cd /tmp/android-sdk/cmdline-tools
+        wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+        unzip -q commandlinetools-linux-11076708_latest.zip
+        mv cmdline-tools latest
+        
+        # 接受 license
+        yes | latest/bin/sdkmanager --sdk_root=/tmp/android-sdk --licenses
+        
+        # 安装组件
+        latest/bin/sdkmanager --sdk_root=/tmp/android-sdk "platform-tools" "build-tools;33.0.0" "platforms;android-33"
+        
+        # 复制到 buildozer 目录
+        mkdir -p ~/.buildozer/android/platform/android-sdk
+        cp -r /tmp/android-sdk/* ~/.buildozer/android/platform/android-sdk/
+        
+        # 创建 tools 软链接
+        cd ~/.buildozer/android/platform/android-sdk
+        mkdir -p tools
+        ln -s ../cmdline-tools/latest/bin tools/bin
     
     - name: Build APK
       run: |
