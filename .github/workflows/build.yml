@@ -24,24 +24,26 @@ jobs:
             libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev \
             libtinfo5 cmake libffi-dev libssl-dev automake
     
-    - name: Install buildozer
+    - name: Pre-install Android SDK
       run: |
-        pip install buildozer cython
-    
-    - name: Pre-install Android SDK components
-      run: |
-        # 下载并设置 SDK
         mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools
         cd ~/.buildozer/android/platform/android-sdk/cmdline-tools
         wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
         unzip -q commandlinetools-linux-9477386_latest.zip
         mv cmdline-tools latest
         
-        # 接受所有 license
-        yes | latest/bin/sdkmanager --licenses
+        # 创建 tools 软链接（buildozer 期望的路径）
+        cd ~/.buildozer/android/platform/android-sdk
+        mkdir -p tools
+        ln -s ../cmdline-tools/latest/bin tools/bin
         
-        # 安装必需的组件
-        latest/bin/sdkmanager "platform-tools" "build-tools;33.0.0" "platforms;android-33"
+        # 接受 license 并安装组件
+        yes | tools/bin/sdkmanager --licenses
+        tools/bin/sdkmanager "platform-tools" "build-tools;33.0.0" "platforms;android-33"
+    
+    - name: Install buildozer
+      run: |
+        pip install buildozer cython
     
     - name: Build APK
       run: |
